@@ -1,0 +1,89 @@
+import pandas as pd
+import numpy as np
+import os
+import sys
+from sklearn.preprocessing import MinMaxScaler
+import seaborn as sns
+import matplotlib.pyplot as plt
+import tensorflow as tf
+import tensorflow.keras as keras
+
+
+def FeatureArrange(df):
+    """
+    This only for this project
+    """
+    # Rearrange the dataset
+    ## numerical (17)
+    num = df[['BT_NM', 'HR_NM', 'RR_NM', 'HB_NM', 'HCT_NM', 'PLATELET_NM', 'WBC_NM', 'PTT1_NM',
+              'PTT2_NM', 'PTINR_NM', 'ER_NM', 'BUN_NM', 'CRE_NM', 'BMI', 'age', 'NIHTotal',
+              'PPD', ]]
+    ## category (55)
+    cat = df[['THD_ID', 'THDA_FL', 'THDH_FL', 'THDI_FL',
+              'THDAM_FL', 'THDV_FL', 'THDE_FL', 'THDM_FL', 'THDR_FL', 'THDP_FL',
+              'THDOO_FL', 'Gender', 'cortical_ACA_ctr', 'cortical_MCA_ctr', 'subcortical_ACA_ctr',
+              'subcortical_MCA_ctr', 'PCA_cortex_ctr', 'thalamus_ctr',
+              'brainstem_ctr', 'cerebellum_ctr', 'Watershed_ctr',
+              'Hemorrhagic_infarct_ctr', 'cortical_ACA_ctl', 'cortical_MCA_ctl',
+              'subcortical_ACA_ctl', 'subcortical_MCA_ctl', 'PCA_cortex_ctl',
+              'thalamus_ctl', 'brainstem_ctl', 'cerebellum_ctl', 'Watershed_ctl',
+              'Hemorrhagic_infarct_ctl', 'cortical_CT', 'subcortical_CT',
+              'circulation_CT', 'CT_find', 'watershed_CT', 'Hemorrhagic_infarct_CT',
+              'CT_left', 'CT_right', 'NIHS_1a_in', 'NIHS_1b_in', 'NIHS_1c_in',
+              'NIHS_2_in', 'NIHS_3_in', 'NIHS_4_in', 'NIHS_5aL_in', 'NIHS_5bR_in',
+              'NIHS_6aL_in', 'NIHS_6bR_in', 'NIHS_7_in', 'NIHS_8_in', 'NIHS_9_in',
+              'NIHS_10_in', 'NIHS_11_in', ]]
+    ## Label (1)
+    label = df[['elapsed_class']]
+    df = pd.concat([num, cat, label], axis=1).to_numpy()
+
+    return df
+
+
+def DataArrange2D(df, dim):
+    '''
+    transform to N*N matrix (fill with NaN) and MinMaxScaler this matrix
+    input ->  dataframe and dimension
+    output -> dataframe and MinMax Scaler
+    '''
+    df_fa = FeatureArrange(df)
+    sc = MinMaxScaler()
+    sc.fit(df_fa)
+    df = sc.transform(df_fa)
+    # transform to N*N matrix (fill with NaN)
+    df_img = []
+    for i in range(len(df)):
+        df_img.append(
+            np.pad(df[i], (0, dim*dim-len(df)), constant_values=np.nan).reshape(dim, dim))
+    df_img = np.array(df_img)
+
+    return df, sc
+
+
+def random_weight_average(x, x_gen):
+    epsilon = tf.random.uniform([x.shape[0], 1, 1, 1], 0, 1)
+
+    return epsilon*x+(1-epsilon)*x_gen
+
+
+def discriminator_loss(real_output, gen_output, d_hat, x_hat, lambda_=10):
+    fake_loss = tf.reduce_mean(gen_output)
+    real_loss = tf.reduce_mean(real_output)
+    gp_loss = gradient_penalty(d_hat, x_hat)
+
+    return fake_loss - real_loss + gp_loss*lambda_
+
+
+def gradient_penalty(d_hat, x_hat):
+    gradients = tf.gradients(d_hat, x_hat)
+    gradients_sqr = tf.square(gradients)
+    gradients_l2_norm = tf.sqrt(tf.reduce_sum(gradients_sqr, axis=np.arrange(1, gradients_sqr.shape)))
+    gp = tf.reduce_mean(tf.square((gradients_l2_norm-1)))
+
+    return gp
+
+
+def generator_loss(gen_output):
+    gen_loss = tf.reduce_mean(gen_output)
+
+    return gen_loss
