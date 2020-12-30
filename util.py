@@ -7,6 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import tensorflow.keras as keras
+from sklearn.impute import SimpleImputer
 
 
 def FeatureArrange(df):
@@ -35,9 +36,15 @@ def FeatureArrange(df):
               'NIHS_10_in', 'NIHS_11_in', ]]
     ## Label (1)
     label = df[['elapsed_class']]
+    # imputation
+    imp_mode = SimpleImputer(strategy='most_frequent')
+    imp_mean = SimpleImputer(strategy='mean')
+    imp_mode.fit_transform(cat)
+    imp_mean.fit_transform(num)
+
     df = pd.concat([num, cat, label], axis=1).to_numpy()
 
-    return df
+    return df, imp_mode, imp_mean
 
 
 def DataArrange2D(df, dim):
@@ -46,10 +53,10 @@ def DataArrange2D(df, dim):
     input ->  dataframe and dimension
     output -> dataframe and MinMax Scaler
     '''
-    df_fa = FeatureArrange(df)
+    df_fa, imp_mode, imp_mean = FeatureArrange(df)
     sc = MinMaxScaler()
-    sc.fit(df_fa)
-    df = sc.transform(df_fa)
+    df = sc.fit_transform(df_fa)
+
     # transform to N*N matrix (fill with NaN)
     df_img = []
     for i in range(len(df)):
@@ -57,18 +64,18 @@ def DataArrange2D(df, dim):
             np.pad(df[i], (0, dim*dim-len(df)), constant_values=np.nan).reshape(dim, dim))
     df_img = np.array(df_img)
 
-    return df, sc
+    return df, sc, imp_mode, imp_mean
 
 
 def random_weight_average(x, x_gen):
-    epsilon = tf.random.uniform([x.shape[0], 1, 1, 1], 0, 1)
+    epsilon = tf.random.uniform([x.shape[0], 1, ], 0, 1)
 
     return epsilon*x+(1-epsilon)*x_gen
 
 
 def discriminator_loss(real_output, gen_output, d_hat, x_hat, lambda_=10):
-    fake_loss = tf.reduce_mean(gen_output)
     real_loss = tf.reduce_mean(real_output)
+    fake_loss = tf.reduce_mean(gen_output)
     gp_loss = gradient_penalty(d_hat, x_hat)
 
     return fake_loss - real_loss + gp_loss*lambda_
@@ -77,7 +84,8 @@ def discriminator_loss(real_output, gen_output, d_hat, x_hat, lambda_=10):
 def gradient_penalty(d_hat, x_hat):
     gradients = tf.gradients(d_hat, x_hat)
     gradients_sqr = tf.square(gradients)
-    gradients_l2_norm = tf.sqrt(tf.reduce_sum(gradients_sqr, axis=np.arrange(1, gradients_sqr.shape)))
+    gradients_sqr_sum = tf.reduce_sum(gradients_sqr, axis=1, keepdims=True)
+    gradients_l2_norm = tf.sqrt(gradients_sqr_sum)
     gp = tf.reduce_mean(tf.square((gradients_l2_norm-1)))
 
     return gp
