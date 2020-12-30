@@ -16,7 +16,7 @@ class Generator(keras.Model):
         self.fc_layer_3 = layers.Dense(512, use_bias=False, activation='tanh')
 #         self.bn_3 = layers.BatchNormalization()
 
-        self.output_layer = tf.keras.layers.Dense(73, use_bias, activation='sigmoid')
+        self.output_layer = tf.keras.layers.Dense(73, use_bias=False, activation='sigmoid')
 
     def call(self, inputs, training=None):
         x = self.fc_layer_1(inputs)
