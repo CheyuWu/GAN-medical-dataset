@@ -4,8 +4,6 @@ import tensorflow.keras as keras
 from tensorflow.keras import layers
 import os, sys
 
-tf.keras.backend.set_floatx('float64')
-
 class Generator(keras.Model):
     def __init__ (self):
         super(Generator,self).__init__()

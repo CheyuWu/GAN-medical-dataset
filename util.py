@@ -16,11 +16,11 @@ def FeatureArrange(df):
     """
     # Rearrange the dataset
     ## numerical (17)
-    num = df[['BT_NM', 'HR_NM', 'RR_NM', 'HB_NM', 'HCT_NM', 'PLATELET_NM', 'WBC_NM', 'PTT1_NM',
+    num = ['BT_NM', 'HR_NM', 'RR_NM', 'HB_NM', 'HCT_NM', 'PLATELET_NM', 'WBC_NM', 'PTT1_NM',
               'PTT2_NM', 'PTINR_NM', 'ER_NM', 'BUN_NM', 'CRE_NM', 'BMI', 'age', 'NIHTotal',
-              'PPD', ]]
+              'PPD', ]
     ## category (55)
-    cat = df[['THD_ID', 'THDA_FL', 'THDH_FL', 'THDI_FL',
+    cat = ['THD_ID', 'THDA_FL', 'THDH_FL', 'THDI_FL',
               'THDAM_FL', 'THDV_FL', 'THDE_FL', 'THDM_FL', 'THDR_FL', 'THDP_FL',
               'THDOO_FL', 'Gender', 'cortical_ACA_ctr', 'cortical_MCA_ctr', 'subcortical_ACA_ctr',
               'subcortical_MCA_ctr', 'PCA_cortex_ctr', 'thalamus_ctr',
@@ -33,16 +33,16 @@ def FeatureArrange(df):
               'CT_left', 'CT_right', 'NIHS_1a_in', 'NIHS_1b_in', 'NIHS_1c_in',
               'NIHS_2_in', 'NIHS_3_in', 'NIHS_4_in', 'NIHS_5aL_in', 'NIHS_5bR_in',
               'NIHS_6aL_in', 'NIHS_6bR_in', 'NIHS_7_in', 'NIHS_8_in', 'NIHS_9_in',
-              'NIHS_10_in', 'NIHS_11_in', ]]
+              'NIHS_10_in', 'NIHS_11_in', ]
     ## Label (1)
     label = df[['elapsed_class']]
     # imputation
     imp_mode = SimpleImputer(strategy='most_frequent')
     imp_mean = SimpleImputer(strategy='mean')
-    imp_mode.fit_transform(cat)
-    imp_mean.fit_transform(num)
+    df[cat] = imp_mode.fit_transform(df[cat])
+    df[num] = imp_mean.fit_transform(df[num])
 
-    df = pd.concat([num, cat, label], axis=1).to_numpy()
+    df = pd.concat([df[num], df[cat], label], axis=1)
 
     return df, imp_mode, imp_mean
 
