@@ -7,13 +7,13 @@ import os, sys
 class Generator(keras.Model):
     def __init__ (self):
         super(Generator,self).__init__()
-        self.fc_layer_1 = layers.Dense(128*73, use_bias=False, activation='tanh')
+        self.fc_layer_1 = layers.Dense(128, use_bias=False, activation=tf.nn.leaky_relu)
 #         self.bn_1 = layers.BatchNormalization()
 
-        self.fc_layer_2 = layers.Dense(256, use_bias=False, activation='tanh')
+        self.fc_layer_2 = layers.Dense(256, use_bias=False, activation=tf.nn.leaky_relu)
 #         self.bn_2 = layers.BatchNormalization()
 
-        self.fc_layer_3 = layers.Dense(512, use_bias=False, activation='tanh')
+        self.fc_layer_3 = layers.Dense(512, use_bias=False, activation= tf.nn.leaky_relu)
 #         self.bn_3 = layers.BatchNormalization()
 
         self.output_layer = tf.keras.layers.Dense(73, use_bias=False, activation='sigmoid')
@@ -29,16 +29,16 @@ class Generator(keras.Model):
 class Discriminator(keras.Model):
     def __init__(self):
         super(Discriminator, self).__init__()
-        self.fc_layer_1 = layers.Dense(512, use_bias=False, activation='tanh')
+        self.fc_layer_1 = layers.Dense(512, use_bias=False, activation=tf.nn.leaky_relu)
 #         self.bn_1 = layers.BatchNormalization()
 
-        self.fc_layer_2 = layers.Dense(256, use_bias=False, activation='tanh')
+        self.fc_layer_2 = layers.Dense(256, use_bias=False, activation=tf.nn.leaky_relu)
 #         self.bn_2 = layers.BatchNormalization()
 
-        self.fc_layer_3 = layers.Dense(128, use_bias=False, activation='tanh')
+        self.fc_layer_3 = layers.Dense(128, use_bias=False, activation=tf.nn.leaky_relu)
 
 #         self.bn_3 = layers.BatchNormalization()
-        self.output_layer = layers.Dense(1, use_bias=False, activation='linear')
+        self.output_layer = layers.Dense(1, use_bias=False, activation='sigmoid')
 
     def call(self, inputs, training = None):
         x = self.fc_layer_1(inputs)
