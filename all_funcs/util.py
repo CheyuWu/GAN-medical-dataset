@@ -68,7 +68,7 @@ def DataArrange2D(df, dim):
 
 
 def random_weight_average(x, x_gen):
-    epsilon = tf.random.uniform([x.shape[0], 1, ], 0, 1)
+    epsilon = tf.random.uniform([x.shape[0], 1, ], 0, 1,dtype=tf.dtypes.float64)
 
     return epsilon*x+(1-epsilon)*x_gen
 
@@ -77,7 +77,7 @@ def discriminator_loss(real_output, gen_output, d_hat, x_hat, lambda_=10):
     real_loss = tf.reduce_mean(real_output)
     fake_loss = tf.reduce_mean(gen_output)
     gp_loss = gradient_penalty(d_hat, x_hat)
-
+    
     return fake_loss - real_loss + gp_loss*lambda_
 
 
