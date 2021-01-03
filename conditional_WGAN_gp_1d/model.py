@@ -19,7 +19,7 @@ class Generator(keras.Model):
 
         self.output_layer = tf.keras.layers.Dense(72, use_bias=False, activation='sigmoid')
 
-    def call(self, inputs, labels, training=False):
+    def call(self, inputs, labels,):
         z = self.fc_layer_z1(inputs)
         y = self.fc_layer_y1(labels)
 
@@ -46,7 +46,7 @@ class Discriminator(keras.Model):
 
         self.output_labels = layers.Dense(1, use_bias=False, activation='sigmoid')
 
-    def call(self, inputs, training=False):
+    def call(self, inputs, label_out=False):
         x = self.fc_layer_1(inputs)
         x = self.fc_layer_2(x)
         x = self.fc_layer_3(x)
@@ -54,7 +54,7 @@ class Discriminator(keras.Model):
         # Discriminator
         result = self.valid_layer(x)
 
-        if training:
+        if label_out:
             # Recognition
             label = self.fc_layer_label(x)
             label = self.output_labels(label)
