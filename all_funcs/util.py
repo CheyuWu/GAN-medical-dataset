@@ -95,3 +95,9 @@ def generator_loss(gen_output):
     gen_loss = tf.reduce_mean(gen_output)
 
     return gen_loss
+
+def rule_constraint(data, sc = None,):
+    cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+    
+        
+    return
