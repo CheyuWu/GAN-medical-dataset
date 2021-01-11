@@ -29,8 +29,8 @@ def FeatureArrange(df):
               'subcortical_ACA_ctl', 'subcortical_MCA_ctl', 'PCA_cortex_ctl',
               'thalamus_ctl', 'brainstem_ctl', 'cerebellum_ctl', 'Watershed_ctl',
               'Hemorrhagic_infarct_ctl', 'cortical_CT', 'subcortical_CT',
-              'circulation_CT', 'CT_find', 'watershed_CT', 'Hemorrhagic_infarct_CT',
-              'CT_left', 'CT_right', 'NIHS_1a_in', 'NIHS_1b_in', 'NIHS_1c_in',
+              'circulation_CT',  'watershed_CT', 'Hemorrhagic_infarct_CT',
+              'CT_left', 'CT_right','CT_find', 'NIHS_1a_in', 'NIHS_1b_in', 'NIHS_1c_in',
               'NIHS_2_in', 'NIHS_3_in', 'NIHS_4_in', 'NIHS_5aL_in', 'NIHS_5bR_in',
               'NIHS_6aL_in', 'NIHS_6bR_in', 'NIHS_7_in', 'NIHS_8_in', 'NIHS_9_in',
               'NIHS_10_in', 'NIHS_11_in', ]
@@ -98,6 +98,7 @@ def generator_loss(gen_output):
 
 def rule_constraint(data, sc = None,):
     cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+    
     
         
     return
