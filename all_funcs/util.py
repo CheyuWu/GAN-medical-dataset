@@ -68,7 +68,8 @@ def DataArrange2D(df, dim):
 
 
 def random_weight_average(x, x_gen):
-    epsilon = tf.random.uniform([x.shape[0], 1, ], 0, 1, dtype=tf.dtypes.float64)
+    epsilon = tf.random.uniform(
+        [x.shape[0], 1, ], 0, 1, dtype=tf.dtypes.float64)
 
     return epsilon*x+(1-epsilon)*x_gen
 
@@ -83,19 +84,23 @@ def discriminator_loss(real_output, gen_output, d_hat, x_hat, lambda_=10):
 
 def gradient_penalty(d_hat, x_hat):
     gradients = tf.gradients(d_hat, x_hat)
-    gradients_sqr = tf.square(gradients)
-    gradients_sqr_sum = tf.reduce_sum(gradients_sqr, axis=1, keepdims=True)
-    gradients_l2_norm = tf.sqrt(gradients_sqr_sum)
-    gp = tf.reduce_mean(tf.square((gradients_l2_norm-1)))
+    # calculate L2 norm
+    # gradients_sqr = tf.square(gradients)
+    # gradients_sqr_sum = tf.reduce_sum(gradients_sqr, axis=1, keepdims=True)
+    # gradients_l2_norm = tf.sqrt(gradients_sqr_sum)
+    gradients_l2_norm = tf.norm(gradients, keepdims=True)
+    gp = tf.reduce_mean(tf.square((gradients_l2_norm-1.)))
 
     return gp
 
 
 def generator_loss(gen_output):
     gen_loss = -tf.reduce_mean(gen_output)
-
     return gen_loss
 
+def identifiability(gen_data, orig_data):
+    
+    return 
 
 def rule_constraint(data, sc):
     cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)

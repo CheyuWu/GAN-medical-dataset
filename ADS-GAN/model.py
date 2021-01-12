@@ -3,7 +3,7 @@ import tensorflow as tf
 import tensorflow.keras as keras
 from tensorflow.keras import layers
 import os, sys
-sys.append("..")
+sys.path.append("..")
 from all_funcs import util
 
 
