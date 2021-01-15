@@ -1,23 +1,24 @@
+from all_funcs import util
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import tensorflow.keras as keras
 from tensorflow.keras import layers
-import os, sys
+import os
+import sys
 sys.path.append("..")
-from all_funcs import util
 
 
 class Generator(keras.Model):
     def __init__(self):
         super(Generator, self).__init__()
         self.combine_dense = layers.Dense(
-            128, use_bias=False, activation=tf.nn.tanh)
+            62, use_bias=False, activation=tf.nn.tanh)
 
         self.fc_layer_1 = layers.Dense(
-            256, use_bias=False, activation=tf.nn.tanh)
+            31, use_bias=False, activation=tf.nn.tanh)
 
         self.fc_layer_2 = layers.Dense(
-            128, use_bias=False, activation=tf.nn.tanh)
+            62, use_bias=False, activation=tf.nn.tanh)
 
         self.output_layer = tf.keras.layers.Dense(
             62, use_bias=False, activation='sigmoid')
@@ -35,13 +36,13 @@ class Discriminator(keras.Model):
     def __init__(self):
         super(Discriminator, self).__init__()
         self.fc_layer_1 = layers.Dense(
-            512, use_bias=False, activation=tf.nn.tanh)  # 512
+            62, use_bias=False, activation=tf.nn.tanh)  # 512
 
         self.fc_layer_2 = layers.Dense(
-            256, use_bias=False, activation=tf.nn.tanh)  # 256
+            31, use_bias=False, activation=tf.nn.tanh)  # 256
 
         self.fc_layer_3 = layers.Dense(
-            256, use_bias=False, activation=tf.nn.tanh)  # 128 256
+            62, use_bias=False, activation=tf.nn.tanh)  # 128 256
 
         self.output_layer = layers.Dense(
             1, use_bias=False, activation='linear')  # softmax, sigmoid
@@ -69,8 +70,7 @@ def train_discriminator(x, generator, discriminator, dis_optimizer, latent_dim=6
         x_hat = util.random_weight_average(x, gen_data)
         d_hat = discriminator(x_hat)
 
-        disc_loss = util.discriminator_loss(
-            real_output, dis_output, d_hat, x_hat)
+        disc_loss = util.discriminator_loss(real_output, dis_output, d_hat, x_hat)
 
     grad_disc = dis_tape.gradient(disc_loss, discriminator.trainable_variables)
     dis_optimizer.apply_gradients(zip(grad_disc, discriminator.trainable_variables))
@@ -89,9 +89,9 @@ def train_generator(org_data, generator, discriminator, gen_optimizer, batch_siz
         gen_loss = util.generator_loss(dis_output)
 
         # sum all loss
-        sum_loss = gen_loss  # + identifiability
-
+        sum_loss = gen_loss + util.identifiability(gen_data, org_data) 
+        
     grad_gen = gen_tape.gradient(sum_loss, generator.trainable_variables)
     gen_optimizer.apply_gradients(zip(grad_gen, generator.trainable_variables))
 
-    return gen_loss
+    return sum_loss

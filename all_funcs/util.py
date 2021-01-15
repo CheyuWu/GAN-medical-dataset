@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import tensorflow.keras as keras
 from sklearn.impute import SimpleImputer
-
+tf.keras.backend.set_floatx('float64')
 
 def FeatureArrange(df):
     """
@@ -98,11 +98,64 @@ def generator_loss(gen_output):
     gen_loss = -tf.reduce_mean(gen_output)
     return gen_loss
 
-def identifiability(gen_data, orig_data):
-    
-    return 
 
-def rule_constraint(data, sc):
+def weight_L2(w, a, b):
+    '''
+    w -> weight\n
+    a -> original data\n
+    b -> generate data
+    '''
+    q = a-b
+    return tf.sqrt(tf.reduce_sum(w*q*q))
+
+
+def tf_entropy(inputs):
+    _, _, count = tf.unique_with_counts(inputs)
+    prob = count/tf.reduce_sum(count)
+    tf_result = -tf.reduce_sum(prob*tf.math.log(prob))
+    return tf_result
+
+
+def identifiability(gen_output, orig_data):
+    iden_loss = tf.cast(0.,dtype=tf.float64)
+
+    biochemistry = [
+        'HCT_NM', 'PLATELET_NM', 'WBC_NM', 'PTT1_NM', 'PTT2_NM',
+        'PTINR_NM', 'ER_NM', 'BUN_NM', 'CRE_NM',
+    ]
+    num = [
+        'BT_NM', 'HR_NM', 'RR_NM', 'HB_NM',  'BMI', 'age', 'PPD',
+    ]
+    # cat = [
+    #     'THDA_FL', 'THDH_FL', 'THDI_FL', 'THDAM_FL', 'THDV_FL',
+    #     'THDE_FL', 'THDM_FL', 'THDR_FL', 'THDP_FL', 'THDOO_FL', 'Gender',
+    #     'cortical_ACA_ctr', 'cortical_MCA_ctr', 'subcortical_ACA_ctr',
+    #     'subcortical_MCA_ctr', 'PCA_cortex_ctr', 'thalamus_ctr',
+    #     'brainstem_ctr', 'cerebellum_ctr', 'Watershed_ctr',
+    #     'Hemorrhagic_infarct_ctr', 'cortical_ACA_ctl', 'cortical_MCA_ctl',
+    #     'subcortical_ACA_ctl', 'subcortical_MCA_ctl', 'PCA_cortex_ctl',
+    #     'thalamus_ctl', 'brainstem_ctl', 'cerebellum_ctl', 'Watershed_ctl',
+    #     'Hemorrhagic_infarct_ctl', 'NIHS_1a_in', 'NIHS_1b_in', 'NIHS_1c_in',
+    #     'NIHS_2_in', 'NIHS_3_in', 'NIHS_4_in', 'NIHS_5aL_in', 'NIHS_5bR_in',
+    #     'NIHS_6aL_in', 'NIHS_6bR_in', 'NIHS_7_in', 'NIHS_8_in', 'NIHS_9_in',
+    #     'NIHS_10_in', 'NIHS_11_in',
+    # ]
+
+    start = len(biochemistry)+len(num)
+
+    for i in range(orig_data[:, start:].shape[1]):
+        # calculate discrete entropy and inverse the values
+        entr = tf_entropy(orig_data[:, start+i])
+        # To avoid entropy is 0 -> infinity
+        if tf.math.is_inf(1/entr)== False:
+            weight = 1/entr
+            # output weight L2
+            iden_loss += weight_L2(weight, orig_data[:, start+i], gen_output[:, start+i])
+            
+    return iden_loss
+
+
+def reality_constraint(data, sc):
     cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
     # Reverse data to original values
     dataset = sc.inverse_transform(data.numpy())
