@@ -10,6 +10,7 @@ import tensorflow.keras as keras
 from sklearn.impute import SimpleImputer
 tf.keras.backend.set_floatx('float64')
 
+
 def FeatureArrange(df):
     """
     This only for this project
@@ -94,9 +95,8 @@ def gradient_penalty(d_hat, x_hat):
     return gp
 
 
-def generator_loss(gen_output):
-    gen_loss = -tf.reduce_mean(gen_output)
-    return gen_loss
+def generator_loss(gen_output): 
+    return -tf.reduce_mean(gen_output)
 
 
 def weight_L2(w, a, b):
@@ -111,13 +111,12 @@ def weight_L2(w, a, b):
 
 def tf_entropy(inputs):
     _, _, count = tf.unique_with_counts(inputs)
-    prob = count/tf.reduce_sum(count)
-    tf_result = -tf.reduce_sum(prob*tf.math.log(prob))
-    return tf_result
+    prob = count/tf.reduce_sum(count) 
+    return -tf.reduce_sum(prob*tf.math.log(prob))
 
 
 def identifiability(gen_output, orig_data):
-    iden_loss = tf.cast(0.,dtype=tf.float64)
+    iden_loss = tf.cast(0., dtype=tf.float64)
 
     biochemistry = [
         'HCT_NM', 'PLATELET_NM', 'WBC_NM', 'PTT1_NM', 'PTT2_NM',
@@ -147,22 +146,43 @@ def identifiability(gen_output, orig_data):
         # calculate discrete entropy and inverse the values
         entr = tf_entropy(orig_data[:, start+i])
         # To avoid entropy is 0 -> infinity
-        if tf.math.is_inf(1/entr)== False:
+        if tf.math.is_inf(1/entr) == False:
             weight = 1/entr
             # output weight L2
-            iden_loss += weight_L2(weight, orig_data[:, start+i], gen_output[:, start+i])
-            
+            iden_loss += weight_L2(weight,
+                                   orig_data[:, start+i], gen_output[:, start+i])
+
     return iden_loss
 
 
 def reality_constraint(data, sc):
     cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+
+    # Store the loss
+    NIHSS_loss = np.array([])
     # Reverse data to original values
     dataset = sc.inverse_transform(data.numpy())
-    # condition 1: NIHSS total <=42 & >=1
+
+    # Condition: NIHSS total <=42 & >=1
     NIHSS_sub_sum = np.sum(dataset[:, -15:])
+
     # if sum > 42 or <1 return False (0)
     NIHSS_result = np.where((NIHSS_sub_sum <= 42) & (NIHSS_sub_sum >= 1), 1, 0)
-    NIHSS_loss = cross_entropy(tf.ones_like(NIHSS_result), NIHSS_result)
+    NIHSS_loss = np.append(NIHSS_loss, cross_entropy(
+        tf.ones_like(NIHSS_result), NIHSS_result))
 
-    return NIHSS_loss
+    # constraint of NIHSS details # ---------------------
+    NIHSS_dataset = np.round(dataset[:, -15:])
+    # NIHSS 1a == 3 -> NIHSS XX == X
+    condition = np.array(
+        [None, 2, 2, None, None, 3, 4, 4, 4, 4, 0, 2, 3, 2, 2])
+
+    for i,cond in enumerate(condition):
+        if cond:
+            NIHSS_result = np.where((NIHSS_dataset[:, 0] == 3) & (
+                NIHSS_dataset[:, i] == cond), 1, 0)
+
+            NIHSS_loss = np.append(NIHSS_loss, cross_entropy(
+                tf.ones_like(NIHSS_result), NIHSS_result))
+
+    return np.sum(NIHSS_loss, dtype=np.float64)

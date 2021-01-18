@@ -9,8 +9,9 @@ sys.path.append("..")
 
 
 class Generator(keras.Model):
-    def __init__(self):
+    def __init__(self, latent_dim):
         super(Generator, self).__init__()
+        self.latent_dim = latent_dim
         self.combine_dense = layers.Dense(
             63, use_bias=False, activation=tf.nn.tanh)
 
@@ -21,7 +22,7 @@ class Generator(keras.Model):
             63, use_bias=False, activation=tf.nn.tanh)
 
         self.output_layer = tf.keras.layers.Dense(
-            63, use_bias=False, activation='sigmoid')
+            self.latent_dim, use_bias=False, activation='sigmoid')
 
     def call(self, inputs, org_data):
         # combine_dense
