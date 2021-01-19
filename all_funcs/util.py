@@ -95,7 +95,7 @@ def gradient_penalty(d_hat, x_hat):
     return gp
 
 
-def generator_loss(gen_output): 
+def generator_loss(gen_output):
     return -tf.reduce_mean(gen_output)
 
 
@@ -111,7 +111,7 @@ def weight_L2(w, a, b):
 
 def tf_entropy(inputs):
     _, _, count = tf.unique_with_counts(inputs)
-    prob = count/tf.reduce_sum(count) 
+    prob = count/tf.reduce_sum(count)
     return -tf.reduce_sum(prob*tf.math.log(prob))
 
 
@@ -155,33 +155,47 @@ def identifiability(gen_output, orig_data):
     return iden_loss
 
 
-def reality_constraint(data, sc):
+def reality_constraint(data, params):
     cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
     # Store the loss
-    NIHSS_loss = np.array([])
+    #NIHSS_loss = np.array([])
     # Reverse data to original values
-    dataset=np.round(sc.inverse_transform(data),1)
+    dataset = tf_inverse_MinMaxScalar(data, params)
     # Condition: NIHSS total <=42 & >=1
-    NIHSS_sub_sum = np.sum(dataset[:, -15:])
+    NIHSS_sub_sum = tf.reduce_sum(dataset[:, -15:], 0)
 
     # if sum > 42 or <1 return False (0)
-    NIHSS_result = np.where((NIHSS_sub_sum <= 42) & (NIHSS_sub_sum >= 1), 1, 0)
-    NIHSS_loss = np.append(NIHSS_loss, cross_entropy(
-        tf.ones_like(NIHSS_result), NIHSS_result))
+    NIHSS_result = tf.cast(tf.where((NIHSS_sub_sum <= 42) & (
+        NIHSS_sub_sum >= 1), 1, 0), dtype=tf.float64)
 
+    NIHSS_loss = cross_entropy(tf.ones_like(
+        NIHSS_result, dtype=tf.float64), NIHSS_result)
+    
     # constraint of NIHSS details # ---------------------
-    NIHSS_dataset = np.round(dataset[:, -15:])
+    NIHSS_dataset = tf.round(dataset[:, -15:])
     # NIHSS 1a == 3 -> NIHSS XX == X
-    condition = np.array([None, 2, 2, None, None, 3, 4, 4, 4, 4, 0, 2, 3, 2, 2])
+    condition = np.array(
+        [None, 2, 2, None, None, 3, 4, 4, 4, 4, 0, 2, 3, 2, 2])
 
-    for i,cond in enumerate(condition):
+    for i, cond in enumerate(condition):
         if cond:
-            NIHSS_result = np.where((NIHSS_dataset[:, 0] == 3) & (
-                NIHSS_dataset[:, i] == cond), 1, 0)
+            # calculate the NIHSS detail's loss
+            NIHSS_result = tf.cast(tf.where((NIHSS_dataset[:, 0] == 3) & (
+                NIHSS_dataset[:, i] == cond), 1, 0), dtype=tf.float64)
 
-            NIHSS_loss = np.append(NIHSS_loss, cross_entropy(
-                tf.ones_like(NIHSS_result), NIHSS_result))
+            loss = cross_entropy(tf.ones_like(NIHSS_result, dtype=tf.float64),
+                                 NIHSS_result, )
+            # sum all the loss of NIHSS
+            NIHSS_loss += loss 
 
-    return np.sum(NIHSS_loss, dtype=np.float64)
+    return NIHSS_loss
 
 
+def tf_inverse_MinMaxScalar(data, params):
+    # we can't convert tensor to numpy while we are training, so operate the inverse by tf api
+    data = data * \
+        tf.convert_to_tensor(
+            (params['max']-params['min']))+tf.convert_to_tensor(params['min'])
+
+    tf.print(data)
+    return data

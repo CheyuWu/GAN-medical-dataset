@@ -82,7 +82,7 @@ def train_discriminator(x, generator, discriminator, dis_optimizer, latent_dim=6
 
 
 @tf.function
-def train_generator(org_data, generator, discriminator, gen_optimizer, Scaler, batch_size=128, latent_dim=63):
+def train_generator(org_data, generator, discriminator, gen_optimizer, params, batch_size=128, latent_dim=63):
     noise = tf.random.normal([batch_size, latent_dim])
 
     with tf.GradientTape() as gen_tape:
@@ -90,11 +90,11 @@ def train_generator(org_data, generator, discriminator, gen_optimizer, Scaler, b
         dis_output = discriminator(gen_data)
 
         gen_loss = util.generator_loss(dis_output)
-
+        
         # sum all loss
         sum_loss = gen_loss + \
             util.identifiability(gen_data, org_data) + \
-            util.reality_constraint(gen_data, Scaler)
+            util.reality_constraint(gen_data, params)
 
     grad_gen = gen_tape.gradient(sum_loss, generator.trainable_variables)
     gen_optimizer.apply_gradients(zip(grad_gen, generator.trainable_variables))
