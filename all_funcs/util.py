@@ -197,5 +197,4 @@ def tf_inverse_MinMaxScalar(data, params):
         tf.convert_to_tensor(
             (params['max']-params['min']))+tf.convert_to_tensor(params['min'])
 
-    tf.print(data)
     return data

@@ -66,11 +66,12 @@ def train_discriminator(x, label, generator, discriminator, dis_optimizer, laten
     with tf.GradientTape() as dis_tape:
         gen_data = generator(noise, x, label)
         dis_output = discriminator(gen_data)
-
-        real_output = discriminator(x)
+        ## concat real_data and label
+        real_data_with_label = tf.concat([x, label], axis=1)
+        real_output = discriminator(real_data_with_label)
 
         # formula of Gradient penalty
-        x_hat = util.random_weight_average(x, gen_data)
+        x_hat = util.random_weight_average(real_data_with_label, gen_data)
         d_hat = discriminator(x_hat)
 
         disc_loss = util.discriminator_loss(
@@ -84,7 +85,7 @@ def train_discriminator(x, label, generator, discriminator, dis_optimizer, laten
 
 
 @tf.function
-def train_generator(org_data, label, generator, discriminator, gen_optimizer, Scaler, batch_size=128, latent_dim=62):
+def train_generator(org_data, label, generator, discriminator, gen_optimizer, params, batch_size=128, latent_dim=62):
     noise = tf.random.normal([batch_size, latent_dim])
 
     with tf.GradientTape() as gen_tape:
@@ -96,7 +97,7 @@ def train_generator(org_data, label, generator, discriminator, gen_optimizer, Sc
         # sum all loss
         sum_loss = gen_loss + \
             util.identifiability(gen_data, org_data) + \
-            util.reality_constraint(gen_data, Scaler)
+            util.reality_constraint(gen_data, params)
 
     grad_gen = gen_tape.gradient(sum_loss, generator.trainable_variables)
     gen_optimizer.apply_gradients(zip(grad_gen, generator.trainable_variables))
