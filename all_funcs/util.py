@@ -157,12 +157,10 @@ def identifiability(gen_output, orig_data):
 
 def reality_constraint(data, sc):
     cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
-
     # Store the loss
     NIHSS_loss = np.array([])
     # Reverse data to original values
-    dataset = sc.inverse_transform(data.numpy())
-
+    dataset=np.round(sc.inverse_transform(data),1)
     # Condition: NIHSS total <=42 & >=1
     NIHSS_sub_sum = np.sum(dataset[:, -15:])
 
@@ -174,8 +172,7 @@ def reality_constraint(data, sc):
     # constraint of NIHSS details # ---------------------
     NIHSS_dataset = np.round(dataset[:, -15:])
     # NIHSS 1a == 3 -> NIHSS XX == X
-    condition = np.array(
-        [None, 2, 2, None, None, 3, 4, 4, 4, 4, 0, 2, 3, 2, 2])
+    condition = np.array([None, 2, 2, None, None, 3, 4, 4, 4, 4, 0, 2, 3, 2, 2])
 
     for i,cond in enumerate(condition):
         if cond:
@@ -186,3 +183,5 @@ def reality_constraint(data, sc):
                 tf.ones_like(NIHSS_result), NIHSS_result))
 
     return np.sum(NIHSS_loss, dtype=np.float64)
+
+
