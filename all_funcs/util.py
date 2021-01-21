@@ -86,9 +86,11 @@ def discriminator_loss(real_output, gen_output, d_hat, x_hat, lambda_=10):
 def gradient_penalty(d_hat, x_hat):
     gradients = tf.gradients(d_hat, x_hat)
     # calculate L2 norm
-    # gradients_sqr = tf.square(gradients)
-    # gradients_sqr_sum = tf.reduce_sum(gradients_sqr, axis=1, keepdims=True)
-    # gradients_l2_norm = tf.sqrt(gradients_sqr_sum)
+#     gradients_sqr = tf.square(gradients)
+#     gradients_sqr_sum = tf.reduce_sum(gradients_sqr, axis=1, keepdims=True)
+#     gradients_l2_norm = tf.sqrt(gradients_sqr_sum)
+    
+    ## the easiest way to calcuate L2 norm
     gradients_l2_norm = tf.norm(gradients, keepdims=True)
     gp = tf.reduce_mean(tf.square((gradients_l2_norm-1.)))
 
@@ -139,7 +141,8 @@ def identifiability(gen_output, orig_data):
     #     'NIHS_6aL_in', 'NIHS_6bR_in', 'NIHS_7_in', 'NIHS_8_in', 'NIHS_9_in',
     #     'NIHS_10_in', 'NIHS_11_in',
     # ]
-
+    
+    ## we temporary don't calculate numerical data
     start = len(biochemistry)+len(num)
 
     for i in range(orig_data[:, start:].shape[1]):
@@ -157,12 +160,12 @@ def identifiability(gen_output, orig_data):
 
 def reality_constraint(data, params):
     cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
-    # Store the loss
-    #NIHSS_loss = np.array([])
-    # Reverse data to original values
+    # inverse data to original values
     dataset = tf_inverse_MinMaxScalar(data, params)
+    
     # Condition: NIHSS total <=42 & >=1
-    NIHSS_sub_sum = tf.reduce_sum(dataset[:, -15:], 0)
+    ## The last column is label, so we select the range from (-16~-1)
+    NIHSS_sub_sum = tf.reduce_sum(dataset[:, -16:-1], 0)
 
     # if sum > 42 or <1 return False (0)
     NIHSS_result = tf.cast(tf.where((NIHSS_sub_sum <= 42) & (
@@ -171,8 +174,9 @@ def reality_constraint(data, params):
     NIHSS_loss = cross_entropy(tf.ones_like(
         NIHSS_result, dtype=tf.float64), NIHSS_result)
     
-    # constraint of NIHSS details # ---------------------
-    NIHSS_dataset = tf.round(dataset[:, -15:])
+    #################### constraint of NIHSS details ###################################
+    ## The last column is label, so we select the range from (-16~-1)
+    NIHSS_dataset = tf.round(dataset[:, -16:-1])
     # NIHSS 1a == 3 -> NIHSS XX == X
     condition = np.array(
         [None, 2, 2, None, None, 3, 4, 4, 4, 4, 0, 2, 3, 2, 2])
@@ -187,7 +191,7 @@ def reality_constraint(data, params):
                                  NIHSS_result, )
             # sum all the loss of NIHSS
             NIHSS_loss += loss 
-
+    
     return NIHSS_loss
 
 
