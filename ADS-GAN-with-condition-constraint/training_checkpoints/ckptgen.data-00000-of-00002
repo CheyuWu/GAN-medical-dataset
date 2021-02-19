@@ -1,14 +1,12 @@
-те05
-E
-combine_dense
-
-fc_layer_1
+ом}зи
+V
+label_input
+combine_dense
 
+fc_layer_1
+
 fc_layer_2
-output_layer
-
-
-kernel
+output_layer
 
 
 kernel
@@ -18,11 +16,20 @@ fc_layer_2
 
 
 kernel
-[Y
-VARIABLE_VALUEgenerator/dense/kernel/combine_dense/kernel/.ATTRIBUTES/VARIABLE_VALUE
+
+
+	kernel
+
+
+
+kernel
+YW
+VARIABLE_VALUEgenerator/dense/kernel-label_input/kernel/.ATTRIBUTES/VARIABLE_VALUE
+][
+VARIABLE_VALUEgenerator/dense_1/kernel/combine_dense/kernel/.ATTRIBUTES/VARIABLE_VALUE
 ZX
-VARIABLE_VALUEgenerator/dense_1/kernel,fc_layer_1/kernel/.ATTRIBUTES/VARIABLE_VALUE
+VARIABLE_VALUEgenerator/dense_2/kernel,fc_layer_1/kernel/.ATTRIBUTES/VARIABLE_VALUE
 ZX
-VARIABLE_VALUEgenerator/dense_2/kernel,fc_layer_2/kernel/.ATTRIBUTES/VARIABLE_VALUE
+VARIABLE_VALUEgenerator/dense_3/kernel,fc_layer_2/kernel/.ATTRIBUTES/VARIABLE_VALUE
 \Z
-VARIABLE_VALUEgenerator/dense_3/kernel.output_layer/kernel/.ATTRIBUTES/VARIABLE_VALUE
+VARIABLE_VALUEgenerator/dense_4/kernel.output_layer/kernel/.ATTRIBUTES/VARIABLE_VALUE

@@ -12,23 +12,27 @@ class Generator(keras.Model):
     def __init__(self, latent_dim):
         super(Generator, self).__init__()
         self.latent_dim = latent_dim
+        self.label_input = layers.Dense(
+            512, use_bias=False, activation=tf.nn.tanh
+        )
         self.combine_dense = layers.Dense(
-            62, use_bias=False, activation=tf.nn.tanh)
+            512, use_bias=False, activation=tf.nn.tanh)
 
         self.fc_layer_1 = layers.Dense(
-            31, use_bias=False, activation=tf.nn.tanh)
+            256, use_bias=False, activation=tf.nn.tanh)
 
         self.fc_layer_2 = layers.Dense(
-            62, use_bias=False, activation=tf.nn.tanh)
+            128, use_bias=False, activation=tf.nn.tanh)
 
         self.output_layer = tf.keras.layers.Dense(
-            latent_dim+1, use_bias=False, activation='sigmoid')
+            latent_dim+1, use_bias=False, activation='linear') # sigmoid
 
     def call(self, noise, org_data, labels):
         # combine_dense
-        combined_x = self.combine_dense(
-            tf.concat([org_data, noise, labels], axis=-1))
-        x = self.fc_layer_1(combined_x)
+        x = self.label_input(labels)
+        x = self.combine_dense(
+            tf.concat([org_data, noise, x], axis=-1))
+        x = self.fc_layer_1(x)
         x = self.fc_layer_2(x)
         x = self.output_layer(x)
         return x
@@ -41,10 +45,10 @@ class Discriminator(keras.Model):
             63, use_bias=False, activation=tf.nn.tanh)
 
         self.fc_layer_2 = layers.Dense(
-            32, use_bias=False, activation=tf.nn.tanh)  # 256
+            128, use_bias=False, activation=tf.nn.tanh)  # 256
 
         self.fc_layer_3 = layers.Dense(
-            63, use_bias=False, activation=tf.nn.tanh)  # 128 256
+            256, use_bias=False, activation=tf.nn.tanh)  # 128 256
 
         self.output_layer = layers.Dense(
             1, use_bias=False, activation='linear')  # softmax, sigmoid

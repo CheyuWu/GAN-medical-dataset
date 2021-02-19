@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import tensorflow.keras as keras
 from sklearn.impute import SimpleImputer
+import tensorflow_probability as tfp
+import tensorflow.keras.backend as K
 tf.keras.backend.set_floatx('float64')
 
 
@@ -20,8 +22,8 @@ def FeatureArrange(df):
     num = ['BT_NM', 'HR_NM', 'RR_NM', 'HB_NM', 'HCT_NM', 'PLATELET_NM', 'WBC_NM', 'PTT1_NM',
            'PTT2_NM', 'PTINR_NM', 'ER_NM', 'BUN_NM', 'CRE_NM', 'BMI', 'age', 'NIHTotal',
            'PPD', ]
-    ## category (55)
-    cat = ['THD_ID', 'THDA_FL', 'THDH_FL', 'THDI_FL',
+    ## category (55) + NIHSS (15)
+    cat_NIHSS = ['THD_ID', 'THDA_FL', 'THDH_FL', 'THDI_FL',
            'THDAM_FL', 'THDV_FL', 'THDE_FL', 'THDM_FL', 'THDR_FL', 'THDP_FL',
            'THDOO_FL', 'Gender', 'cortical_ACA_ctr', 'cortical_MCA_ctr', 'subcortical_ACA_ctr',
            'subcortical_MCA_ctr', 'PCA_cortex_ctr', 'thalamus_ctr',
@@ -31,19 +33,22 @@ def FeatureArrange(df):
            'thalamus_ctl', 'brainstem_ctl', 'cerebellum_ctl', 'Watershed_ctl',
            'Hemorrhagic_infarct_ctl', 'cortical_CT', 'subcortical_CT',
            'circulation_CT',  'watershed_CT', 'Hemorrhagic_infarct_CT',
-           'CT_left', 'CT_right', 'CT_find', 'NIHS_1a_in', 'NIHS_1b_in', 'NIHS_1c_in',
+           'CT_left', 'CT_right', 'CT_find',
+           'NIHS_1a_in', 'NIHS_1b_in', 'NIHS_1c_in',
            'NIHS_2_in', 'NIHS_3_in', 'NIHS_4_in', 'NIHS_5aL_in', 'NIHS_5bR_in',
            'NIHS_6aL_in', 'NIHS_6bR_in', 'NIHS_7_in', 'NIHS_8_in', 'NIHS_9_in',
-           'NIHS_10_in', 'NIHS_11_in', ]
+           'NIHS_10_in', 'NIHS_11_in',
+                ]
+
     ## Label (1)
     label = df[['elapsed_class']]
     # imputation
     imp_mode = SimpleImputer(strategy='most_frequent')
     imp_mean = SimpleImputer(strategy='mean')
-    df[cat] = imp_mode.fit_transform(df[cat])
+    df[cat_NIHSS] = imp_mode.fit_transform(df[cat_NIHSS])
     df[num] = imp_mean.fit_transform(df[num])
 
-    df = pd.concat([df[num], df[cat], label], axis=1)
+    df = pd.concat([df[num], df[cat_NIHSS], label], axis=1)
 
     return df, imp_mode, imp_mean
 
@@ -117,9 +122,10 @@ def tf_entropy(inputs):
     return -tf.reduce_sum(prob*tf.math.log(prob))
 
 
-def identifiability(gen_output, orig_data):
+def identifiability(gen_output, orig_data, min_entr=1e-3):
     iden_loss = tf.cast(0., dtype=tf.float64)
-
+    ## Set the minimum of entropy
+    min_entr = tf.cast(min_entr, dtype=tf.float64)
     biochemistry = [
         'HCT_NM', 'PLATELET_NM', 'WBC_NM', 'PTT1_NM', 'PTT2_NM',
         'PTINR_NM', 'ER_NM', 'BUN_NM', 'CRE_NM',
@@ -136,24 +142,30 @@ def identifiability(gen_output, orig_data):
     #     'Hemorrhagic_infarct_ctr', 'cortical_ACA_ctl', 'cortical_MCA_ctl',
     #     'subcortical_ACA_ctl', 'subcortical_MCA_ctl', 'PCA_cortex_ctl',
     #     'thalamus_ctl', 'brainstem_ctl', 'cerebellum_ctl', 'Watershed_ctl',
-    #     'Hemorrhagic_infarct_ctl', 'NIHS_1a_in', 'NIHS_1b_in', 'NIHS_1c_in',
-    #     'NIHS_2_in', 'NIHS_3_in', 'NIHS_4_in', 'NIHS_5aL_in', 'NIHS_5bR_in',
-    #     'NIHS_6aL_in', 'NIHS_6bR_in', 'NIHS_7_in', 'NIHS_8_in', 'NIHS_9_in',
-    #     'NIHS_10_in', 'NIHS_11_in',
+    #     'Hemorrhagic_infarct_ctl', 
     # ]
+    NIH_all = [
+        'NIHS_1a_in', 'NIHS_1b_in', 'NIHS_1c_in',
+        'NIHS_2_in', 'NIHS_3_in', 'NIHS_4_in', 'NIHS_5aL_in', 'NIHS_5bR_in',
+        'NIHS_6aL_in', 'NIHS_6bR_in', 'NIHS_7_in', 'NIHS_8_in', 'NIHS_9_in',
+        'NIHS_10_in', 'NIHS_11_in',
+    ]
     
-    ## we temporary don't calculate numerical data
+    ## we temporary don't calculate numerical data and NIHSS
     start = len(biochemistry)+len(num)
-
-    for i in range(orig_data[:, start:].shape[1]):
+    end = len(NIH_all)
+    
+    for i in range(orig_data[:, start:(-end)].shape[1]):
         # calculate discrete entropy and inverse the values
-        entr = tf_entropy(orig_data[:, start+i])
+        ## start+i -> ignore the numerical and NIHSS columns
+        entr = tf_entropy(orig_data[:, start+i]) 
+        
         # To avoid entropy is 0 -> infinity
-        if tf.math.is_inf(1/entr) == False:
-            weight = 1/entr
-            # output weight L2
-            iden_loss += weight_L2(weight,
-                                   orig_data[:, start+i], gen_output[:, start+i])
+        if tf.math.is_inf(1/entr) == True:
+            entr = min_entr
+        weight = 1/entr
+        # output weight L2
+        iden_loss += weight_L2(weight, orig_data[:, start+i], gen_output[:, start+i]) 
 
     return iden_loss
 
@@ -202,3 +214,26 @@ def tf_inverse_MinMaxScalar(data, params):
             (params['max']-params['min']))+tf.convert_to_tensor(params['min'])
 
     return data
+
+def Mahalanobis_dist(m, n):
+    diff = m - n
+    tf_stack=tf.concat([x, y], axis=0)
+    ## Calculate covariance
+    try :
+        V = tfp.stats.covariance(tf_stack)
+    except Exception as ex:
+        V = tf_covariance(tf_stack)
+        
+    VI = tf.linalg.inv(V)
+    dist=tf.sqrt(K.dot(K.dot(diff,VI),tf.transpose(diff)))
+    
+    return tf.linalg.diag_part(dist)
+
+## If your tensorflow version <= 2.4 , you need to use this to calculate covariance
+def tf_covariance(x):
+    mean_x = tf.reduce_mean(x, axis=0, keepdims=True)
+    m = tf.matmul(tf.transpose(mean_x), mean_x)
+    v = tf.matmul(tf.transpose(x), x)/tf.cast(tf.shape(x)[0], tf.float64)
+    cov = v - m
+    return  cov
+    

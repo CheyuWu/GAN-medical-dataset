@@ -20,10 +20,10 @@ fc_layer_3
 
 kernel
 ^\
-VARIABLE_VALUEdiscriminator/dense_4/kernel,fc_layer_1/kernel/.ATTRIBUTES/VARIABLE_VALUE
+VARIABLE_VALUEdiscriminator/dense_5/kernel,fc_layer_1/kernel/.ATTRIBUTES/VARIABLE_VALUE
 ^\
-VARIABLE_VALUEdiscriminator/dense_5/kernel,fc_layer_2/kernel/.ATTRIBUTES/VARIABLE_VALUE
+VARIABLE_VALUEdiscriminator/dense_6/kernel,fc_layer_2/kernel/.ATTRIBUTES/VARIABLE_VALUE
 ^\
-VARIABLE_VALUEdiscriminator/dense_6/kernel,fc_layer_3/kernel/.ATTRIBUTES/VARIABLE_VALUE
+VARIABLE_VALUEdiscriminator/dense_7/kernel,fc_layer_3/kernel/.ATTRIBUTES/VARIABLE_VALUE
 `^
-VARIABLE_VALUEdiscriminator/dense_7/kernel.output_layer/kernel/.ATTRIBUTES/VARIABLE_VALUE
+VARIABLE_VALUEdiscriminator/dense_8/kernel.output_layer/kernel/.ATTRIBUTES/VARIABLE_VALUE

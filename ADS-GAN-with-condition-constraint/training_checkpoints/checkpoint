@@ -1,2 +1,2 @@
-model_checkpoint_path: "ckptgen"
-all_model_checkpoint_paths: "ckptgen"
+model_checkpoint_path: "ckptdis"
+all_model_checkpoint_paths: "ckptdis"
