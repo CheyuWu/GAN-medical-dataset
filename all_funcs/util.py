@@ -180,7 +180,7 @@ def reality_constraint(data, params):
     NIHSS_sub_sum = tf.reduce_sum(dataset[:, -16:-1], 0)
 
     # if sum > 42 or <1 return False (0)
-    NIHSS_result = tf.cast(tf.where((NIHSS_sub_sum <= 42) & (
+    NIHSS_result = tf.cast(tf.where((NIHSS_sub_sum <= 39) & (
         NIHSS_sub_sum >= 1), 1, 0), dtype=tf.float64)
 
     NIHSS_loss = cross_entropy(tf.ones_like(
